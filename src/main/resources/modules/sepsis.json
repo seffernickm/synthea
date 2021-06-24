@@ -241,7 +241,10 @@
       "distributed_transition": [
         {
           "transition": "Death",
-          "distribution": 0.125
+          "distribution": {
+            "attribute": "ICU_DEATH_RATE",
+            "default": 0.125
+          }
         },
         {
           "transition": "Record_Blood_Pressure_2",
@@ -337,7 +340,10 @@
       "distributed_transition": [
         {
           "transition": "Acute_Respiratory_Distress_Syndrome_ARDS",
-          "distribution": 0.18
+          "distribution": {
+            "attribute": "ARDS_RATE",
+            "default": 0.18
+          }
         },
         {
           "transition": "Delay_in_ICU",
@@ -399,8 +405,21 @@
         "high": 30,
         "unit": "minutes"
       },
-      "direct_transition": "Fluid_Resuscitation2",
-      "reason": "Septic_Shock"
+      "reason": "Septic_Shock",
+      "conditional_transition": [
+        {
+          "transition": "Dynamic_Vascular_Assessment",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "DO_ENHANCED",
+            "operator": "==",
+            "value": 1
+          }
+        },
+        {
+          "transition": "Fluid_Resuscitation2"
+        }
+      ]
     },
     "Admit_to_Inpatient": {
       "type": "Procedure",
@@ -430,7 +449,7 @@
           "display": "Encounter for problem"
         }
       ],
-      "direct_transition": "Blood_Cultures"
+      "direct_transition": "Set_Provider_Quality"
     },
     "Lactate_Level1": {
       "type": "Observation",
@@ -526,7 +545,31 @@
           }
         }
       ],
-      "direct_transition": "Check_ARDS"
+      "conditional_transition": [
+        {
+          "transition": "ICU_Death_Rate_Low",
+          "condition": {
+            "condition_type": "And",
+            "conditions": [
+              {
+                "condition_type": "Attribute",
+                "attribute": "DO_ENHANCED",
+                "operator": "==",
+                "value": 1
+              },
+              {
+                "condition_type": "Attribute",
+                "attribute": "FLUID_RESPONSIVE",
+                "operator": "!=",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "transition": "Check_ARDS"
+        }
+      ]
     },
     "Ventilator_Weaning": {
       "type": "Procedure",
@@ -572,8 +615,32 @@
         "high": 30,
         "unit": "minutes"
       },
-      "direct_transition": "Lactate_Level",
-      "reason": "Septic_Shock"
+      "reason": "Septic_Shock",
+      "conditional_transition": [
+        {
+          "transition": "Record_Blood_Pressure",
+          "condition": {
+            "condition_type": "And",
+            "conditions": [
+              {
+                "condition_type": "Attribute",
+                "attribute": "DO_ENHANCED",
+                "operator": "==",
+                "value": 1
+              },
+              {
+                "condition_type": "Attribute",
+                "attribute": "FLUID_RESPONSIVE",
+                "operator": "!=",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "transition": "Lactate_Level"
+        }
+      ]
     },
     "Delay": {
       "type": "Delay",
@@ -635,6 +702,139 @@
       "direct_transition": "Vancomycin",
       "administration": true,
       "reason": "Sepsis"
+    },
+    "Dynamic_Vascular_Assessment": {
+      "type": "Procedure",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": 278292003,
+          "display": "Ultrasonography (procedure)"
+        },
+        {
+          "system": "SNOMED-CT",
+          "code": 704042003,
+          "display": "Non-invasive cardiac output monitoring (activity)"
+        }
+      ],
+      "distribution": {
+        "kind": "UNIFORM",
+        "parameters": {
+          "high": 60,
+          "low": 30
+        }
+      },
+      "unit": "minutes",
+      "direct_transition": "Fluid_Resuscitation2"
+    },
+    "Set_Use_Enhanced_False": {
+      "type": "SetAttribute",
+      "attribute": "DO_ENHANCED",
+      "direct_transition": "Is_Fluid_Responsive",
+      "value": -1
+    },
+    "Set_Use_Enhanced_True": {
+      "type": "SetAttribute",
+      "attribute": "DO_ENHANCED",
+      "direct_transition": "Is_Fluid_Responsive",
+      "value": 1
+    },
+    "Is_Fluid_Responsive": {
+      "type": "Simple",
+      "distributed_transition": [
+        {
+          "transition": "Set_Fluid_Responsive_True",
+          "distribution": 0.5
+        },
+        {
+          "transition": "Set_Fluid_Responsive_False",
+          "distribution": 0.5
+        }
+      ]
+    },
+    "Set_Fluid_Responsive_True": {
+      "type": "SetAttribute",
+      "attribute": "FLUID_RESPONSIVE",
+      "direct_transition": "Blood_Cultures",
+      "value": 1
+    },
+    "Set_Fluid_Responsive_False": {
+      "type": "SetAttribute",
+      "attribute": "FLUID_RESPONSIVE",
+      "direct_transition": "Blood_Cultures",
+      "value": -1
+    },
+    "ICU_Death_Rate_Low": {
+      "type": "SetAttribute",
+      "attribute": "ICU_DEATH_RATE",
+      "direct_transition": "ARDS_Rate_Low",
+      "value": 0.1
+    },
+    "ARDS_Rate_Low": {
+      "type": "SetAttribute",
+      "attribute": "ARDS_RATE",
+      "direct_transition": "Check_ARDS",
+      "value": 0.14
+    },
+    "Set_Provider_Quality": {
+      "type": "Simple",
+      "distributed_transition": [
+        {
+          "transition": "Set_Provider_LQ",
+          "distribution": 0.359
+        },
+        {
+          "transition": "Set_Provider_HQ",
+          "distribution": 0.641
+        }
+      ]
+    },
+    "Set_Provider_LQ": {
+      "type": "SetAttribute",
+      "attribute": "HQ_PROVIDER",
+      "direct_transition": "Set_Use_Enhanced",
+      "value": -1
+    },
+    "Set_Provider_HQ": {
+      "type": "SetAttribute",
+      "attribute": "HQ_PROVIDER",
+      "direct_transition": "Set_Use_Enhanced",
+      "value": 1
+    },
+    "Set_Use_Enhanced": {
+      "type": "Simple",
+      "complex_transition": [
+        {
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "HQ_PROVIDER",
+            "operator": "==",
+            "value": 1
+          },
+          "distributions": [
+            {
+              "transition": "Set_Use_Enhanced_True",
+              "distribution": 0.8
+            },
+            {
+              "transition": "Set_Use_Enhanced_False",
+              "distribution": 0.2
+            }
+          ]
+        },
+        {
+          "distributions": [
+            {
+              "transition": "Set_Use_Enhanced_True",
+              "distribution": 0.2
+            },
+            {
+              "transition": "Set_Use_Enhanced_False",
+              "distribution": 0.8
+            }
+          ]
+        }
+      ]
     }
   },
   "gmf_version": 2
