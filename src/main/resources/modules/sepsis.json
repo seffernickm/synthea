@@ -219,7 +219,7 @@
       },
       "distributed_transition": [
         {
-          "transition": "Discharge_to_Home",
+          "transition": "Log Discharge",
           "distribution": 0.6
         },
         {
@@ -240,7 +240,7 @@
       ],
       "distributed_transition": [
         {
-          "transition": "Death",
+          "transition": "Log Death",
           "distribution": {
             "attribute": "ICU_DEATH_RATE",
             "default": 0.125
@@ -406,20 +406,7 @@
         "unit": "minutes"
       },
       "reason": "Septic_Shock",
-      "conditional_transition": [
-        {
-          "transition": "Dynamic_Vascular_Assessment",
-          "condition": {
-            "condition_type": "Attribute",
-            "attribute": "DO_ENHANCED",
-            "operator": "==",
-            "value": 1
-          }
-        },
-        {
-          "transition": "Fluid_Resuscitation2"
-        }
-      ]
+      "direct_transition": "Log Septic Shock"
     },
     "Admit_to_Inpatient": {
       "type": "Procedure",
@@ -591,7 +578,7 @@
           "distribution": 0.5
         },
         {
-          "transition": "Death",
+          "transition": "Log Death",
           "distribution": 0.5
         }
       ],
@@ -653,7 +640,7 @@
     },
     "Record_Blood_Pressure_2": {
       "type": "MultiObservation",
-      "category": "vital-signs",
+      "category": "social-history",
       "number_of_observations": 0,
       "codes": [
         {
@@ -755,13 +742,13 @@
     "Set_Fluid_Responsive_True": {
       "type": "SetAttribute",
       "attribute": "FLUID_RESPONSIVE",
-      "direct_transition": "Blood_Cultures",
+      "direct_transition": "Log HQ_PROVIDER",
       "value": 1
     },
     "Set_Fluid_Responsive_False": {
       "type": "SetAttribute",
       "attribute": "FLUID_RESPONSIVE",
-      "direct_transition": "Blood_Cultures",
+      "direct_transition": "Log HQ_PROVIDER",
       "value": -1
     },
     "ICU_Death_Rate_Low": {
@@ -833,6 +820,117 @@
               "distribution": 0.8
             }
           ]
+        }
+      ]
+    },
+    "Log HQ_PROVIDER": {
+      "type": "Observation",
+      "category": "social-history",
+      "unit": "cm",
+      "codes": [
+        {
+          "system": "LOINC",
+          "code": "1234",
+          "display": "Debug: HQ_PROVIDER"
+        }
+      ],
+      "direct_transition": "Log DO_ENHANCED",
+      "attribute": "HQ_PROVIDER"
+    },
+    "Log DO_ENHANCED": {
+      "type": "Observation",
+      "category": "social-history",
+      "unit": "cm",
+      "codes": [
+        {
+          "system": "LOINC",
+          "code": "1234",
+          "display": "Debug: DO_ENHANCED"
+        }
+      ],
+      "direct_transition": "Log FLUID_RESPONSIVE",
+      "attribute": "DO_ENHANCED"
+    },
+    "Log FLUID_RESPONSIVE": {
+      "type": "Observation",
+      "category": "social-history",
+      "unit": "cm",
+      "codes": [
+        {
+          "system": "LOINC",
+          "code": "1234",
+          "display": "Debug: FLUID_RESPONSIVE"
+        }
+      ],
+      "direct_transition": "Blood_Cultures",
+      "attribute": "FLUID_RESPONSIVE"
+    },
+    "Log Discharge": {
+      "type": "Observation",
+      "category": "social-history",
+      "unit": "cm",
+      "codes": [
+        {
+          "system": "LOINC",
+          "code": "1234",
+          "display": "Debug: Death"
+        }
+      ],
+      "direct_transition": "Discharge_to_Home",
+      "exact": {
+        "quantity": -1
+      }
+    },
+    "Log Death": {
+      "type": "Observation",
+      "category": "social-history",
+      "unit": "cm",
+      "codes": [
+        {
+          "system": "LOINC",
+          "code": "1234",
+          "display": "Debug: Death"
+        }
+      ],
+      "distribution": {
+        "kind": "EXACT",
+        "round": false,
+        "parameters": {
+          "value": 1
+        }
+      },
+      "direct_transition": "Death"
+    },
+    "Log Septic Shock": {
+      "type": "Observation",
+      "category": "vital-signs",
+      "unit": "",
+      "codes": [
+        {
+          "system": "LOINC",
+          "code": "1234",
+          "display": "Debug: Septic Shock"
+        }
+      ],
+      "distribution": {
+        "kind": "EXACT",
+        "round": false,
+        "parameters": {
+          "value": 1
+        }
+      },
+      "conditional_transition": [
+        {
+          "transition": "Dynamic_Vascular_Assessment",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "DO_ENHANCED",
+            "operator": "==",
+            "value": 1
+          }
+        },
+        {
+          "transition": "Fluid_Resuscitation2"
         }
       ]
     }
