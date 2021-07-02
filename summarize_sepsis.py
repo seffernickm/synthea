@@ -4,8 +4,13 @@ import pandas
 
 # set `exporter.csv.export = true` in src/main/resources/synthea.properties, then generate data
 
-# DATE,PATIENT,ENCOUNTER,CATEGORY,CODE,DESCRIPTION,VALUE,UNITS,TYPE
-csv_path = './output/csv/observations.csv'
+# if working with very large observations.csv, create new CSV as follows:
+# head -1 $csvPath > $outPath; grep 'Debug' $csvPath >> $outPath
+
+# csv_path = './output/csv/observations.csv'
+csv_path = './debug.csv'
+
+# observations.csv headers: DATE,PATIENT,ENCOUNTER,CATEGORY,CODE,DESCRIPTION,VALUE,UNITS,TYPE
 
 DESCRIPTION_COL = 'DESCRIPTION'
 PATIENT_COL = 'PATIENT'
@@ -43,12 +48,17 @@ def main():
         
         for key in FIELD_MAPPING:
             col = FIELD_MAPPING[key]
-            val = patient_subset[patient_subset[DESCRIPTION_COL] == col][VALUE_COL].values[0]
-            data[key] = val
+            val = patient_subset[patient_subset[DESCRIPTION_COL] == col][VALUE_COL]
+            if len(val) > 0:
+                val = val.values[0]
+                data[key] = str(val)
             
         row = []
         for key in PRINT_FIELD_ORDER:
-            row.append(data[key])
+            if key in data:
+                row.append(data[key])
+            else:
+                row.append('')
         print(','.join(row))
 
 if __name__ == '__main__':
